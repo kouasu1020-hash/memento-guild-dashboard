@@ -1,4 +1,4 @@
-<!doctype html>\n<!-- GitHub Pages -->
+<!doctype html>
 <html lang="ja">
 <head>
   <meta charset="utf-8">
@@ -9,17 +9,21 @@
   </style>
 </head>
 <body><main class="wrap">
-  <header><div><h1>メメントモリ ギルド分析</h1><div class="muted">World 119・最終更新 2026/08/24 19:48</div></div><div class="selectbox"><label for="guild">注目ギルド</label><select id="guild"></select></div></header>
+  <header><div><h1>メメントモリ ギルド分析</h1><div class="muted" id="updated">World 119・最終更新 2026/08/24 19:48</div></div><div class="selectbox"><label for="guild">注目ギルド</label><select id="guild"></select></div></header>
   <section class="grid"><div class="card"><h2>最新 TOP10</h2><p class="muted">行を押しても注目先を変更できます</p><div class="tablewrap"><table><thead><tr><th>順位</th><th>ギルド</th><th>人数</th><th>総戦闘力</th></tr></thead><tbody id="rows"></tbody></table></div></div>
   <div class="charts"><article class="card"><h2>総戦闘力推移</h2><div class="legend"><span class="dot"></span>選択中は赤い太線、その他は薄く表示</div><div class="chart" id="power"></div></article><article class="card"><h2>人数推移</h2><div class="chart" id="members"></div></article></div></section>
   <p class="note">現在は公開用プロトタイプです。表示の選択は閲覧者ごとのブラウザ内だけで変わり、元データには影響しません。</p>
 </main><script>
-const dates=['8/10','8/17','8/24'];
-const guilds=[
+let dates=['8/10','8/17','8/24'];
+let guilds=[
 ['Divin Mage',[15040000000,16210000000,15041103741],[49,49,48]],['妖精郷',[12190000000,12190000000,12244940643],[42,42,43]],['天神雛子',[10750000000,11090000000,11255672839],[31,32,34]],['今宵ノ森',[11500000000,11150000000,11253763940],[33,33,49]],["7'Bridge",[9300000000,9900000000,10703876629],[36,38,39]],['プラチナ☆シャイン',[9200000000,9200000000,9841489606],[47,47,49]],['紅魔族の村',[9100000000,9300000000,9747321644],[44,44,45]],['静寂の森',[12200000000,12200000000,7977747716],[50,50,50]],['イオン産大根',[7500000000,7600000000,7848151931],[32,31,29]],['Re:六根清浄',[7500000000,7500000000,7768167853],[33,33,33]]];
 const colors=['#2563eb','#f59e0b','#16a34a','#7c3aed','#ea580c','#0891b2','#4f46e5','#db2777','#65a30d','#0f766e'];let selected=0;
 const fmt=n=>n.toLocaleString('ja-JP');
 function chart(el,key,format){const w=760,h=270,p={l:70,r:20,t:18,b:42};const vals=guilds.flatMap(g=>g[key]);let min=Math.min(...vals),max=Math.max(...vals);if(key===2){min=Math.max(0,Math.floor(min/10)*10-5);max=Math.ceil(max/10)*10}else{min=Math.floor(min/5e9)*5e9;max=Math.ceil(max/5e9)*5e9}const x=i=>p.l+i*(w-p.l-p.r)/(dates.length-1),y=v=>p.t+(max-v)*(h-p.t-p.b)/(max-min||1);let s=`<svg viewBox="0 0 ${w} ${h}" role="img">`;for(let i=0;i<5;i++){let v=min+(max-min)*i/4,yy=y(v);s+=`<line x1="${p.l}" y1="${yy}" x2="${w-p.r}" y2="${yy}" stroke="#e2e8f0"/><text x="${p.l-10}" y="${yy+4}" text-anchor="end" font-size="11" fill="#64748b">${format(v)}</text>`}guilds.forEach((g,i)=>{if(i===selected)return;s+=`<polyline points="${g[key].map((v,j)=>`${x(j)},${y(v)}`).join(' ')}" fill="none" stroke="${colors[i]}" stroke-width="1.5" opacity=".27"/>`});let g=guilds[selected];s+=`<polyline points="${g[key].map((v,j)=>`${x(j)},${y(v)}`).join(' ')}" fill="none" stroke="#dc2626" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>`;g[key].forEach((v,i)=>s+=`<circle cx="${x(i)}" cy="${y(v)}" r="4" fill="#dc2626"/>`);dates.forEach((d,i)=>s+=`<text x="${x(i)}" y="${h-14}" text-anchor="middle" font-size="12" fill="#64748b">${d}</text>`);el.innerHTML=s+'</svg>'}
 function render(){document.querySelectorAll('#rows tr').forEach((r,i)=>r.classList.toggle('active',i===selected));document.querySelector('#guild').value=selected;chart(document.querySelector('#power'),1,v=>(v/1e9).toFixed(1)+'B');chart(document.querySelector('#members'),2,v=>Math.round(v))}
-const sel=document.querySelector('#guild'),rows=document.querySelector('#rows');guilds.forEach((g,i)=>{sel.add(new Option(g[0],i));rows.insertAdjacentHTML('beforeend',`<tr data-i="${i}"><td>${i+1}</td><td>${g[0]}</td><td>${g[2][2]}</td><td>${fmt(g[1][2])}</td></tr>`)});sel.onchange=e=>{selected=+e.target.value;render()};rows.onclick=e=>{let r=e.target.closest('tr');if(r){selected=+r.dataset.i;render()}};render();
+const sel=document.querySelector('#guild'),rows=document.querySelector('#rows');
+function setup(){selected=0;sel.innerHTML='';rows.innerHTML='';guilds.forEach((g,i)=>{sel.add(new Option(g[0],i));let last=g[1].length-1;rows.insertAdjacentHTML('beforeend',`<tr data-i="${i}"><td>${i+1}</td><td>${g[0]}</td><td>${g[2][last]??'-'}</td><td>${g[1][last]==null?'-':fmt(g[1][last])}</td></tr>`)});render()}
+sel.onchange=e=>{selected=+e.target.value;render()};rows.onclick=e=>{let r=e.target.closest('tr');if(r){selected=+r.dataset.i;render()}};
+setup();
+fetch('data.json?'+Date.now(),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error();return r.json()}).then(data=>{dates=data.dates.map(d=>d.replace(/^\\d{4}\//,''));guilds=data.guilds.map(g=>[g.name,g.power,g.members]);document.querySelector('#updated').textContent=`World ${data.world}・最終更新 ${data.updated_at}`;setup()}).catch(()=>{});
 </script></body></html>
